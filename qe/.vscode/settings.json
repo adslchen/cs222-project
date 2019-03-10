@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "string": "cpp",
+        "utility": "cpp",
+        "new": "cpp",
+        "vector": "cpp"
+    }
+}

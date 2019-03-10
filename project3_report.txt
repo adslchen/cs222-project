@@ -1,0 +1,49 @@
+1. Basic information
+Team number (e.g., 01) : 08
+#1 Student ID : 90289484
+#1 Student Name : Wei-Che Chen
+#2 Student ID : 69928284
+#2 Student Name : Yueh Wu
+OS (bit) : MAC XOS 10.13.6
+gcc version : 5.4.0
+
+
+2. Meta-data page in an index file
+- Show your meta-data page of an index design if you have any. 
+    In our index file, we have a header page as the first page of our file. This header page is used to record counter (read, write, append) and unused page index, which is appended due to page abandoned after merging pages.
+    The format is as follow:
+	| readCounter(4Byte) | writeCounter(4Byte)  | appendCounter(4Byte)  | deleted_pageID1(4Byte)  | deleted_pageID2(4Byte)  .... |... (slot directory [offset, length]) ... | record size(4Byte)  | free space(4Byte) |
+
+3. Index Entry Format
+- Show your index entry design (structure). 
+    The index entry format is as follow:
+	| flag_tag(1Byte) | last_page_pointer(4Byte) | next_page_pointer(4Byte) | slot_data1 | slot_data2 .... | ... (slot directory [offset, length]) ... | record size(4Byte)  | free space(4Byte) |
+	* flag_tag: indicate whether the page is internal-page(key page) or leaf-page(data page)
+	* last_page_pointer: record the index that point to the last page
+	* next_page_pointer: record the index that point to the next page
+
+4. Page Format
+- Show your internal-page (non-leaf node) design.
+    The format of internal-page is the same as what we've explained at problem 3. The length of slot = length_of_size + 4(page rid) + 4(slot rid).
+    
+
+- Show your leaf-page (leaf node) design.
+    The slot format is different with internal-page. Page ID and Key would append in turn. It allows us to extract the value of slot and extract children page by page id.
+	| page_ID0(4Byte) | slot1(nByte) | page_ID1(4Byte) | slot2(nByte) | page_ID2(4Byte) | 
+
+5. Implementation Detail
+- Have you added your own source file (.cc or .h)? No
+
+- Have you implemented non-lazy deletion? Choose Yes or No: Yes
+
+- Have you implemented duplicated key handling that can span multiple pages? Choose Yes or No: Yes
+  If yes, please explain briefly how you have implemented this feature.
+    I implemented this feature by concatenating value with page ID and slot ID. When we need to compare two entries, we would firstly compare value. Then, we could compare their page ID and slot ID. It allows us to inserting duplicated key in order and capable to span multiple pages.
+
+- Other implementation details:
+    We've used 2 special methods to handle split and merge. The first one is "Compact". Given a range of slots, we sort the offset in ascending order and tightly re-arrange these slot by the order. The second one is "Shift Directory", we right-shift part of slots directory to make it tight to down-right position. These 2 methods break up the problems into small pieces. Take split for example, if we want to split half of data from L1 to L2, we could compact the half of data toward up-left position at L2 and shift directory to down-right position at L2. 
+    
+
+6. Other (optional)
+- Freely use this section to tell us about things that are related to the project 3, but not related to the other sections (optional)
+

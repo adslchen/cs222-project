@@ -1,0 +1,81 @@
+1. Basic information
+Team number (e.g., 01) : 08
+#1 Student ID : 90289484
+#1 Student Name : Wei-Che Chen
+#2 Student ID : 69928284
+#2 Student Name : Yueh Wu
+OS (bit) : MAC XOS 10.13.6
+gcc version : 5.4.0
+
+
+2. Meta-data
+- Show your meta-data design (Tables and Columns table) and information about each column.
+
+|number of field| offset1| length1| offset2| length2| .... | |data1 |data2 | |
+
+We put a number of field at the start of the directory. Then, we follow by the offset and length of each field. The offset represents the field's position(in bytes) relative to the starting point of record, while the length represents the fields length(in bytes).
+
+The information about each column is identical with project2 description in the website, that is:
+Tables (table-id:int, table-name:varchar(50), file-name:varchar(50))
+Columns(table-id:int, column-name:varchar(50), column-type:int, column-length:int, column-position:int)
+
+
+3. Internal Record Format
+- Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that your team hasn't implemented this feature.
+- Describe how you store a VarChar field.
+- Describe how you deal with an update and delete.
+
+|number of field| offset1| length1| offset2| length2| .... | |data1 |data2 | |
+
+The Internal Record Format is as same as Meta-data Format. When we use RID(page number, slot number) to access this record, I can use the 'offset' to get field by offset and 'length' to extract specific range in pages. This make it in O(1).
+
+We store a VarChar the same as float, int.
+The different is the length of the varchar.
+We use next offset subtract this offset to get the length of the data.
+If we meet the last offset, we use record size subtract offset to get the length of the record.
+If the length of the data is 0, then this data is NULL.
+
+
+
+4. Page Format
+- Show your page format design.
+- Describe how you deal with an update and delete.
+
+|record1 |record2 | | | | | ... | slot2| slot1 | Records on this page | Free Space|
+where slot is consist of two integer, offset and length.
+
+We use a slot directory on bottom of the page to access the record in O(1).
+The slot is compose of offset, which is the record's position(by bytes) relative to starting point of the page.
+Length is the length of the record.
+
+When we need to insert a record, I use PAGE_SIZE - free space - (total slot in the directory)*sizeof(int)*2
+to get the position where we need to place record.
+And we update the free space to ensure we get right record position next time.
+
+
+5. File Format
+- Show your file format design
+
+Every time we create a file, we would reserve the first page to record 3 parameters: readPageCounter, writePageCounter and appendPageCounter. They are in the top of page and each of parameter occupy 4 bytes. It gives us information about how many pages are there in the file while we are searching for specific RID or simply scanning the slots.
+
+Based on this design, the nth data page is actually the 'n+1'th page in the file. 
+
+
+6. Implementation Detail
+- Other implementation details goes here.
+
+    We've changed the record format from project 1 to project 2. At first, we only stored offset of each field and try to use 2 offset difference to extract length. However, it would crash at p1 private tests when there is a empty string since our old design would judge it as NULL. After adding length into the record format, this issue was solved.
+
+    To indicate the data in slot is deleted, we set offset of slot to -1. It allow us to traverse the slots to find where could we insert record. If the slots_offset == -1 and the free space is enough, we insert data into this slot and return RID to upper level.
+
+    To scan the record, we would firstly read the attribute based on _recordDescriptor. Next, we would compare the attribute with _value based on operator. Finally, if the conditions are matched, we would form the data format based on _attributeNames with null indicators in the front.
+
+    While we want to get the attributes based on tableName, it is intuitively to scan the table to find attributes. However, scanning also need to call 'getAttributes' to get the descriptors format from column, it would cause infinite recursion. 
+    To avoid such a case, we separate getAttributes to 3 different cases: 1. getTableAttributes, 2.getColumnAttributes, 3.getAttribute. We could simply assign the attribute for the first 2 cases since their attributes are static. As for getting attribute from other tables, we could call getAttribute and it would use getColumnAttributes to get the descriptors instead. Therefore, such a mechanism won't cause recursion.
+
+    
+
+
+7. Other (optional)
+- Freely use this section to tell us about things that are related to the project 2, but not related to the other sections (optional)
+
